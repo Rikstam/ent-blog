@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rikstam/ent-blog-example/ent"
+	"github.com/rikstam/ent-blog-example/ent/post"
 	"github.com/rikstam/ent-blog-example/ent/user"
 	"html/template"
 	"log"
@@ -35,6 +36,7 @@ func newRouter(srv *server) chi.Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Get("/", srv.index)
+	r.Post("/add", srv.add)
 	return r
 } // index serves the blog home page
 
@@ -42,6 +44,7 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 	posts, err := s.client.Post.
 		Query().
 		WithAuthor().
+		Order(ent.Desc(post.FieldCreatedAt)).
 		All(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -50,6 +53,23 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.Execute(w, posts); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// add creates a new blog post.
+func (s *server) add(w http.ResponseWriter, r *http.Request) {
+	author, err := s.client.User.Query().Only(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := s.client.Post.Create().
+		SetTitle(r.FormValue("title")).
+		SetBody(r.FormValue("body")).
+		SetAuthor(author).
+		Exec(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func main() {

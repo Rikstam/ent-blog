@@ -6,3 +6,8 @@ Based on tutorial from [https://entgo.io/blog/2023/02/23/simple-cms-with-ent/](h
 - Run tests with `go test ./...`
 - Start the app with `go run main.go -dsn "root:pass@tcp(localhost:3306)/ent?parseTime=true"`
 - App visible at `localhost:8080`
+## TODO
+- CSRF token
+- Input validations
+- add HTMX
+- add authentication
